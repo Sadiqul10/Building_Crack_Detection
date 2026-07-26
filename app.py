@@ -17,7 +17,7 @@ st.write("Upload a building image to detect whether it contains a crack.")
 # Load Models
 @st.cache_resource
 def load_models():
-    mobilenet = tf.keras.models.load_model("models/mobilnetv2_model.keras"")
+    mobilenet = tf.keras.models.load_model("models/mobilnetv2_model.keras")
     resnet = tf.keras.models.load_model("models/resnet50_model.keras")
     return mobilenet, resnet
 
