@@ -219,8 +219,8 @@ if image is not None:
 # Footer
 st.markdown("---")
 st.markdown("### About")
-st.markdown("**Intern:** Sadiqul Islam")
-st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology")
+st.markdown("**Intern:** Sadiqul Islam MCA, Arunachal University of Studies")
+st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology, USTM")
 st.markdown(
     "Developed using **TensorFlow**, **MobileNetV2**, **ResNet50**, and **Streamlit**."
 )
