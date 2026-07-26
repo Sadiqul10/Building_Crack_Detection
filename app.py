@@ -43,7 +43,6 @@ if not available_models:
 
 class_names = ["Crack", "Non_Crack"]
 
-
 # Image Input Method
 
 st.header("📤 Upload Building Image")
@@ -87,42 +86,40 @@ if image is not None:
 
     # Resize image
     img = image.resize((224, 224))
+    base_img_array = np.array(img).astype("float32")
 
-    img_array = np.array(img).astype("float32")
+    def run_prediction(model, preprocess_input):
+        img_array = preprocess_input(base_img_array.copy())
+        img_array = np.expand_dims(img_array, axis=0)
+        prediction = model.predict(img_array, verbose=0)
+        probability = float(prediction[0][0])
+        if probability > 0.5:
+            return "Non_Crack", probability
+        else:
+            return "Crack", 1 - probability
 
-    # Select model and preprocessing
-    if selected_model == "MobileNetV2":
-        from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
-        model = mobilenet_model
-    else:
-        from tensorflow.keras.applications.resnet50 import preprocess_input
-        model = resnet_model
+    st.markdown("### 🔍 Results")
+    cols = st.columns(len(available_models))
 
-    img_array = preprocess_input(img_array)
-    img_array = np.expand_dims(img_array, axis=0)
+    for col, model_name in zip(cols, available_models):
+        with col:
+            st.markdown(f"**{model_name}**")
+            if model_name == "MobileNetV2":
+                from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+                predicted_class, confidence = run_prediction(mobilenet_model, preprocess_input)
+            else:
+                from tensorflow.keras.applications.resnet50 import preprocess_input
+                predicted_class, confidence = run_prediction(resnet_model, preprocess_input)
 
-    # Predict
-    prediction = model.predict(img_array, verbose=0)
-
-    probability = float(prediction[0][0])
-
-    if probability > 0.5:
-        predicted_class = "Non_Crack"
-        confidence = probability
-    else:
-        predicted_class = "Crack"
-        confidence = 1 - probability
-
-    # Display Results
-    st.success(f"Prediction: **{predicted_class}**")
-    st.info(f"Confidence: **{confidence * 100:.2f}%**")
-    st.progress(confidence)
+            st.success(f"Prediction: **{predicted_class}**")
+            st.info(f"Confidence: **{confidence * 100:.2f}%**")
+            st.progress(confidence)
 
 # Footer
 st.markdown("---")
 st.markdown("### About")
-st.markdown("**Intern:** Sadiqul Islam MCA Arunachal University of Studies")
-st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology, USTM")
+st.markdown("**Intern:** Sadiqul Islam")
+st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology")
 st.markdown(
     "Developed using **TensorFlow**, **MobileNetV2**, **ResNet50**, and **Streamlit**."
 )
