@@ -7,13 +7,13 @@ from PIL import Image
 
 # Page Configuration
 st.set_page_config(
-    page_title="Building Crack Detection",
+    page_title="Crack Detection",
     page_icon="🏢",
     layout="centered"
 )
 
-st.title("🏢 Building Crack Detection")
-st.write("Upload a building image to detect whether it contains a crack.")
+st.title("Crack Detection")
+st.write("Upload an image to detect whether it contains a crack.")
 
 import os
 
