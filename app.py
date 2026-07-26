@@ -114,7 +114,7 @@ def analyze_crack(pil_image):
 
 # Image Input Method
 
-st.header("📤 Upload Building Image")
+st.header("📤 Upload Image")
 
 input_method = st.radio(
     "Choose Image Input Method",
