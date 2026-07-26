@@ -14,14 +14,29 @@ st.set_page_config(
 st.title("🏢 Building Crack Detection")
 st.write("Upload a building image to detect whether it contains a crack.")
 
+import os
+
 # Load Models
 @st.cache_resource
 def load_models():
-    mobilenet = tf.keras.models.load_model("models/mobilnetv2_model.keras")
-    resnet = tf.keras.models.load_model("models/resnet50_model.keras")
+    mobilenet_path = "mobilnetv2_model.keras"
+    resnet_path = "models/resnet50_model.keras"
+
+    mobilenet = tf.keras.models.load_model(mobilenet_path) if os.path.exists(mobilenet_path) else None
+    resnet = tf.keras.models.load_model(resnet_path) if os.path.exists(resnet_path) else None
     return mobilenet, resnet
 
 mobilenet_model, resnet_model = load_models()
+
+available_models = []
+if mobilenet_model is not None:
+    available_models.append("MobileNetV2")
+if resnet_model is not None:
+    available_models.append("ResNet50")
+
+if not available_models:
+    st.error("No model files were found. Please add mobilnetv2_model.keras (and optionally models/resnet50_model.keras) to the app folder.")
+    st.stop()
 
 
 # Class Labels
@@ -31,7 +46,7 @@ class_names = ["Crack", "Non_Crack"]
 # Model Selection
 selected_model = st.selectbox(
     "Choose Model",
-    ["MobileNetV2", "ResNet50"]
+    available_models
 )
 
 # Image Input Method
