@@ -7,3 +7,4 @@ matplotlib==3.10.5
 scikit-learn==1.7.1
 pandas==2.3.2
 seaborn==0.13.2
+Python==3.13.9
