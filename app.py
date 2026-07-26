@@ -43,11 +43,6 @@ if not available_models:
 
 class_names = ["Crack", "Non_Crack"]
 
-# Model Selection
-selected_model = st.selectbox(
-    "Choose Model",
-    available_models
-)
 
 # Image Input Method
 
