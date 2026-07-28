@@ -1,6 +1,7 @@
 import streamlit as st
 import tensorflow as tf
 import numpy as np
+import os
 from PIL import Image
 
 from gradcam import generate_gradcam_overlay
@@ -18,15 +19,45 @@ st.title("🏢 Building Crack Detection")
 st.write("Upload a building image to detect whether it contains a crack.")
 
 # Load Models
+# Paths are relative to this script's location (works both locally and on
+# Streamlit Community Cloud, where the repo is mounted at /mount/src/<repo>/).
+# Do NOT hardcode an absolute local path like "C:\..." -- it won't exist on
+# the deployment server.
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+MOBILENET_PATH = os.path.join(APP_DIR, "models", "mobilnetv2_model.keras")
+RESNET_PATH = os.path.join(APP_DIR, "models", "resnet50_model.keras")
+
+
 @st.cache_resource
 def load_models():
-    mobilenet = tf.keras.models.load_model(
-        r"C:\building_crack_system\models\mobilnetv2_model.keras"
-    )
-    resnet = tf.keras.models.load_model(
-        r"C:\building_crack_system\models\resnet50_model.keras"
-    )
+    missing = [p for p in (MOBILENET_PATH, RESNET_PATH) if not os.path.exists(p)]
+    if missing:
+        st.error(
+            "Model file(s) not found:\n"
+            + "\n".join(f"- {p}" for p in missing)
+            + f"\n\nApp directory: {APP_DIR}\n"
+            + "Make sure your repo has a `models/` folder next to app.py "
+            "containing `mobilnetv2_model.keras` and `resnet50_model.keras`, "
+            "and that both files are committed to git (they are NOT ignored "
+            "by .gitignore, and not tracked via Git LFS without LFS being "
+            "enabled on Streamlit Cloud)."
+        )
+        st.stop()
+
+    try:
+        mobilenet = tf.keras.models.load_model(MOBILENET_PATH)
+        resnet = tf.keras.models.load_model(RESNET_PATH)
+    except Exception as e:
+        st.error(
+            f"Failed to load model files: {e}\n\n"
+            "This usually means the TensorFlow/Keras version used to save "
+            "the models doesn't match the version installed here. Check "
+            "requirements.txt pins the same tensorflow version you trained with."
+        )
+        st.stop()
+
     return mobilenet, resnet
+
 
 mobilenet_model, resnet_model = load_models()
 
@@ -187,8 +218,8 @@ if image is not None:
 # Footer
 st.markdown("---")
 st.markdown("### About")
-st.markdown("**Intern:** Sadiqul Islam, MCA, Arunachal University of Studies")
+st.markdown("**Intern:** Sadiqul Islam")
 st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology")
 st.markdown(
-    "Developed using **TensorFlow**, **MobileNetV2**, **ResNet50**, **Grad CAM**, and **Streamlit**."
+    "Developed using **TensorFlow**, **MobileNetV2**, **ResNet50**, and **Streamlit**."
 )
