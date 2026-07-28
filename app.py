@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 
 from gradcam import generate_gradcam_overlay
+from crack_severity import assess_crack_severity, SEVERITY_COLORS
 
 
 # Page Configuration
@@ -19,8 +20,12 @@ st.write("Upload a building image to detect whether it contains a crack.")
 # Load Models
 @st.cache_resource
 def load_models():
-    mobilenet = tf.keras.models.load_model("models/mobilnetv2_model.keras")
-    resnet = tf.keras.models.load_model("models/resnet50_model.keras")
+    mobilenet = tf.keras.models.load_model(
+        r"C:\building_crack_system\models\mobilnetv2_model.keras"
+    )
+    resnet = tf.keras.models.load_model(
+        r"C:\building_crack_system\models\resnet50_model.keras"
+    )
     return mobilenet, resnet
 
 mobilenet_model, resnet_model = load_models()
@@ -115,16 +120,17 @@ if image is not None:
     st.info(f"Confidence: **{confidence * 100:.2f}%**")
     st.progress(confidence)
 
-    # Grad-CAM
-    if show_gradcam:
-        with st.spinner("Generating Grad-CAM heatmap..."):
-            overlay, heatmap = generate_gradcam_overlay(
-                model=model,
-                model_name=selected_model,
-                preprocessed_input=img_array,
-                original_image_rgb=original_rgb_for_overlay,
-            )
+    # Grad-CAM (always computed once a prediction is made -- needed both for
+    # the optional visualization below AND for crack severity assessment)
+    with st.spinner("Running Grad-CAM..."):
+        overlay, heatmap = generate_gradcam_overlay(
+            model=model,
+            model_name=selected_model,
+            preprocessed_input=img_array,
+            original_image_rgb=original_rgb_for_overlay,
+        )
 
+    if show_gradcam:
         st.subheader("🔍 Grad-CAM: What the model looked at")
         col1, col2 = st.columns(2)
         with col1:
@@ -136,11 +142,53 @@ if image is not None:
             "blue regions contributed least."
         )
 
+    # Crack Severity Assessment
+    # Grad-CAM is used ONLY to localize the crack area: classical
+    # segmentation (Otsu + morphology) runs restricted to the region the
+    # model attended to, so background clutter never gets counted as crack.
+    if predicted_class == "Crack":
+        result = assess_crack_severity(original_rgb_for_overlay, heatmap)
+        severity = result["severity"]
+        metrics = result["metrics"]
+
+        st.subheader("📏 Crack Severity Assessment")
+
+        badge = SEVERITY_COLORS.get(severity, "")
+        if severity == "High":
+            st.error(f"{badge} Severity: **{severity}**")
+        elif severity == "Moderate":
+            st.warning(f"{badge} Severity: **{severity}**")
+        else:
+            st.success(f"{badge} Severity: **{severity}**")
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Crack length (approx.)", f"{metrics['length_px']:.1f} px")
+        m2.metric("Crack width (approx.)", f"{metrics['width_px']:.1f} px")
+        m3.metric("Crack area", f"{metrics['area_percent']:.2f}%")
+
+        col3, col4 = st.columns(2)
+        with col3:
+            st.image(overlay, caption="Grad-CAM attention region", use_container_width=True)
+        with col4:
+            st.image(
+                result["contour_overlay"],
+                caption="Detected crack boundary (within Grad-CAM region)",
+                use_container_width=True,
+            )
+
+        st.caption(
+            "Length/width/area are pixel-based estimates from the region the "
+            "model's Grad-CAM attention highlighted, not physical measurements "
+            "(no real-world scale reference exists in a plain photo). "
+            "Severity thresholds are heuristic defaults -- recalibrate them in "
+            "`crack_severity.py` against your own labeled images if needed."
+        )
+
 # Footer
 st.markdown("---")
 st.markdown("### About")
 st.markdown("**Intern:** Sadiqul Islam, MCA, Arunachal University of Studies")
-st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology, USTM")
+st.markdown("**Mentor:** Debabrat Bharali, Asst. Prof, CSE (AI & DS), Department of Engineering & Technology")
 st.markdown(
-    "Developed using **TensorFlow**, **MobileNetV2**, **ResNet50**, ** Grad CAM**, and **Streamlit**."
+    "Developed using **TensorFlow**, **MobileNetV2**, **ResNet50**, **Grad CAM**, and **Streamlit**."
 )
